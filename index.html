@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monitoraggio_MiFID_scaduti.xlsx</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23107c41'/%3E%3Cpath d='M9 9l6 7-6 7h4l4-5 4 5h4l-6-7 6-7h-4l-4 5-4-5z' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+/* ============ TOKEN ============ */
+:root{
+  --fondo:#1a2430;
+  --pannello:#223040;
+  --linea:#33465c;
+  --tavola:#2a5291;
+  --tavola-bordo:#1f3f72;
+  --buco:#16202b;
+  --rosso:#e5484d;
+  --giallo:#f4c13a;
+  --mattone:#8d6e5a;
+  --testo:#e8edf4;
+  --tenue:#93a2b5;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --corpo:"Barlow","Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--fondo);color:var(--testo);font-family:var(--corpo);font-size:16px;line-height:1.45;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--giallo);outline-offset:2px}
+.nascosto{display:none!important}
+
+/* ============ LOBBY ============ */
+.lobby{min-height:100%;display:grid;place-items:center;padding:24px}
+.lobby-box{width:min(100%,440px)}
+.logo{font-family:var(--display);font-weight:700;font-size:56px;line-height:.95;margin:0 0 8px;letter-spacing:.5px}
+.logo .dischi{display:inline-flex;gap:6px;vertical-align:middle;margin-left:10px}
+.logo .dischi i{width:22px;height:22px;border-radius:50%;display:inline-block}
+.logo .dischi i:nth-child(1){background:var(--rosso)}
+.logo .dischi i:nth-child(2){background:var(--giallo)}
+.sotto{color:var(--tenue);margin:0 0 28px}
+.blocco{background:var(--pannello);border:1px solid var(--linea);border-radius:14px;padding:18px;margin-bottom:14px}
+.blocco h2{font-family:var(--display);font-weight:600;font-size:22px;margin:0 0 12px}
+.riga{display:flex;gap:10px;flex-wrap:wrap}
+.riga > *{flex:1 1 140px}
+label{display:block;font-size:13px;color:var(--tenue);margin-bottom:4px}
+input,select{width:100%;background:var(--buco);border:1px solid var(--linea);border-radius:8px;color:var(--testo);
+  padding:10px 12px;font:inherit}
+input.codice{text-transform:uppercase;letter-spacing:4px;font-family:var(--display);font-size:20px}
+.btn{background:var(--testo);color:var(--fondo);border:0;border-radius:8px;padding:11px 16px;font-weight:600;margin-top:12px;width:100%}
+.btn.secondario{background:transparent;color:var(--testo);border:1px solid var(--linea)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.nota{font-size:13px;color:var(--tenue);margin-top:18px}
+kbd{font-family:var(--corpo);font-size:12px;background:var(--pannello);border:1px solid var(--linea);border-bottom-width:2px;border-radius:4px;padding:1px 6px}
+
+/* ============ SCOREBUG ============ */
+.bug{display:flex;justify-content:center;padding:14px 12px 6px}
+.bug-in{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;background:#0f1720;border-radius:10px;overflow:hidden;
+  font-family:var(--display);min-width:min(100%,520px);box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.lato{display:flex;align-items:center;gap:10px;padding:8px 14px;position:relative}
+.lato.B{flex-direction:row-reverse;text-align:right}
+.lato .disco{width:16px;height:16px;border-radius:50%;flex:none}
+.lato.A .disco{background:var(--rosso)} .lato.B .disco{background:var(--giallo)}
+.lato .nome{font-weight:600;font-size:20px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.lato .armi-opp{font-family:var(--corpo);font-size:12px;color:var(--tenue);line-height:1.2}
+.lato .punti{font-weight:700;font-size:40px;line-height:1;margin-left:auto;font-variant-numeric:tabular-nums}
+.lato.B .punti{margin-left:0;margin-right:auto}
+.lato::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:transparent;transition:background .25s}
+.lato.A.attivo::after{background:var(--rosso)}
+.lato.B.attivo::after{background:var(--giallo)}
+.centro{background:#1d2a39;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4px 14px;
+  font-size:14px;color:var(--tenue);line-height:1.15;text-align:center}
+.centro b{color:var(--testo);font-size:22px;font-weight:700}
+.punti.su{animation:salta .6s ease}
+@keyframes salta{30%{transform:scale(1.35)}100%{transform:scale(1)}}
+
+/* ============ CAMPO ============ */
+.campo{display:grid;gap:18px;padding:10px 16px 28px;max-width:1040px;margin:0 auto}
+@media (min-width:880px){.campo{grid-template-columns:minmax(0,1fr) 340px;align-items:start}}
+.gioco{display:flex;flex-direction:column;align-items:center}
+.stato{font-size:15px;color:var(--tenue);margin:4px 0 10px;min-height:22px;text-align:center}
+.stato b{color:var(--testo)}
+.condividi{background:var(--pannello);border:1px dashed var(--linea);border-radius:12px;padding:14px 16px;margin-bottom:12px;text-align:center;width:min(100%,520px)}
+.condividi .cod{font-family:var(--display);font-weight:700;font-size:36px;letter-spacing:8px}
+
+.anteprima,.tavola{width:min(92vw,520px)}
+.anteprima{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:0 10px;height:30px;margin-bottom:4px}
+.anteprima span{display:block;margin:auto;width:60%;aspect-ratio:1;border-radius:50%;opacity:0;transition:opacity .12s}
+.anteprima span.on{opacity:.75}
+.anteprima span.A{background:var(--rosso)} .anteprima span.B{background:var(--giallo)}
+.anteprima span.M{background:var(--mattone);border-radius:18%}
+
+.tavola-wrap{position:relative}
+.tavola{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:10px;aspect-ratio:1;background:var(--tavola);
+  border-radius:16px;border-bottom:8px solid var(--tavola-bordo);box-shadow:0 14px 30px rgba(0,0,0,.4)}
+.tavola.ruota-o{animation:ruotaO .65s cubic-bezier(.2,.8,.3,1)}
+.tavola.ruota-a{animation:ruotaA .65s cubic-bezier(.2,.8,.3,1)}
+@keyframes ruotaO{from{transform:rotate(-90deg)}to{transform:rotate(0)}}
+@keyframes ruotaA{from{transform:rotate(90deg)}to{transform:rotate(0)}}
+.cella{position:relative;border-radius:50%;background:var(--buco);box-shadow:inset 0 3px 6px rgba(0,0,0,.5);border:0;padding:0}
+.tavola.giocabile .cella{cursor:pointer}
+.tavola.mira-bomba .cella.piena{cursor:crosshair}
+.tavola.mira-bomba .cella.piena:hover{outline:3px solid #ff8a3d;outline-offset:1px}
+.ped{position:absolute;inset:7%;border-radius:50%}
+.ped.A{background:radial-gradient(circle at 34% 30%,#ff8b8e 0,var(--rosso) 55%,#a8282d 100%)}
+.ped.B{background:radial-gradient(circle at 34% 30%,#ffe596 0,var(--giallo) 55%,#b3860f 100%)}
+.ped.M{border-radius:16%;inset:8%;
+  background:
+   linear-gradient(#5f4536 0 0) 0 33%/100% 2px no-repeat,
+   linear-gradient(#5f4536 0 0) 0 66%/100% 2px no-repeat,
+   linear-gradient(#5f4536 0 0) 50% 0/2px 33% no-repeat,
+   linear-gradient(#5f4536 0 0) 25% 50%/2px 33% no-repeat,
+   linear-gradient(#5f4536 0 0) 75% 50%/2px 33% no-repeat,
+   linear-gradient(#5f4536 0 0) 50% 100%/2px 34% no-repeat,
+   var(--mattone)}
+.ped.cade{animation:cade .42s cubic-bezier(.45,0,.75,1) both}
+@keyframes cade{from{transform:translateY(calc(var(--h) * -116%))}to{transform:translateY(0)}}
+.fantasma{position:absolute;inset:4%;border-radius:50%;border:3px solid #fff;pointer-events:none;animation:svanisce 1.5s ease-out forwards}
+@keyframes svanisce{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.4)}}
+.scoppio{position:absolute;inset:-20%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#ffd27a 0,#ff7a2f 35%,rgba(255,90,40,0) 70%);animation:boom .8s ease-out forwards}
+@keyframes boom{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(1.8)}}
+.coord-col{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;padding:4px 10px 0;width:min(92vw,520px);
+  font-family:var(--display);color:var(--tenue);font-size:13px;text-align:center}
+
+/* ============ ARSENALE ============ */
+.arsenale{width:min(92vw,520px);margin-top:16px;background:var(--pannello);border:1px solid var(--linea);border-radius:14px;padding:14px}
+.ars-testa{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.ars-testa h3{font-family:var(--display);font-weight:600;font-size:20px;margin:0}
+.slot-armi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.arma{background:var(--buco);border:1px solid var(--linea);border-radius:10px;padding:10px 6px;text-align:center;min-height:78px}
+.arma .ic{font-size:26px;display:block;line-height:1.1}
+.arma .nm{font-family:var(--display);font-weight:600;font-size:16px}
+.arma.vuota{color:var(--tenue);font-size:13px;display:grid;place-items:center;border-style:dashed}
+.arma:not(.vuota):hover:not(:disabled){border-color:var(--testo)}
+.arma.armata{border-color:#ff8a3d;box-shadow:0 0 0 2px #ff8a3d inset}
+.arma:disabled{opacity:.45;cursor:not-allowed}
+.riscuoti{width:100%;margin-top:10px;padding:12px;border-radius:10px;border:0;font-weight:600;
+  background:linear-gradient(180deg,#ffd257,#e9a91c);color:#3a2700;display:flex;align-items:center;justify-content:center;gap:10px}
+.riscuoti:disabled{background:var(--buco);color:var(--tenue);cursor:default;border:1px solid var(--linea)}
+.riscuoti .rullo{display:inline-block;width:30px;text-align:center;font-size:22px}
+.mira{margin-top:10px;padding:10px 12px;border-radius:10px;background:#3a2a1c;border:1px solid #7a4a22;font-size:14px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.mira span{flex:1 1 200px}
+.mira button{background:var(--buco);border:1px solid var(--linea);border-radius:8px;padding:7px 12px}
+.mira button.forte{background:var(--testo);color:var(--fondo);border:0;font-weight:600}
+.finale{margin-top:14px;text-align:center}
+
+/* ============ TELECRONACA ============ */
+.cronaca{background:#121b25;border:1px solid var(--linea);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+@media (min-width:880px){.cronaca{position:sticky;top:12px;max-height:calc(100vh - 110px)}}
+.cr-testa{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--linea)}
+.cr-testa h3{font-family:var(--display);font-weight:600;font-size:20px;margin:0;flex:1}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#ff6b6b}
+.live i{width:8px;height:8px;border-radius:50%;background:#ff4d4d;animation:pulsa 1.6s infinite}
+@keyframes pulsa{50%{opacity:.25}}
+.cr-lista{list-style:none;margin:0;padding:6px 0;overflow-y:auto;min-height:220px;max-height:440px}
+@media (min-width:880px){.cr-lista{max-height:none;flex:1}}
+.cr-lista li{display:grid;grid-template-columns:44px 1fr;gap:8px;padding:8px 14px;border-left:4px solid transparent;font-size:14px}
+.cr-lista li .ora{color:var(--tenue);font-size:12px;padding-top:2px;font-variant-numeric:tabular-nums}
+.cr-lista li.p-A{border-left-color:var(--rosso)}
+.cr-lista li.p-B{border-left-color:var(--giallo)}
+.cr-lista li.t-forza4 .tx{font-family:var(--display);font-weight:600;font-size:19px;line-height:1.15}
+.cr-lista li.t-arma .tx{font-weight:600}
+.cr-lista li.t-riscossa .tx,.cr-lista li.t-sistema .tx{color:var(--tenue)}
+.cr-lista li.t-vittoria{background:#2a2410}
+.cr-lista li.t-vittoria .tx{font-family:var(--display);font-weight:700;font-size:22px;color:var(--giallo)}
+.cr-lista li.nuova{animation:entra .5s ease}
+@keyframes entra{from{opacity:0;transform:translateX(-14px);background:rgba(255,255,255,.08)}to{opacity:1;transform:none}}
+.cr-vuota{color:var(--tenue);padding:14px;font-size:14px}
+.cr-piede{padding:10px 14px;border-top:1px solid var(--linea);font-size:12px;color:var(--tenue)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#0f1720;
+  border:1px solid var(--linea);padding:10px 16px;border-radius:10px;font-size:14px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ============ EXCEL FINTO ============ */
+#excel{position:fixed;inset:0;z-index:100;background:#fff;color:#222;font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:13px;
+  display:flex;flex-direction:column}
+.xl-titolo{background:#107c41;color:#fff;display:flex;align-items:center;gap:14px;padding:6px 12px;font-size:12px}
+.xl-titolo .nomefile{flex:1;text-align:center}
+.xl-menu{display:flex;gap:18px;padding:6px 14px 0;background:#f3f3f3;border-bottom:1px solid #d6d6d6;font-size:13px;overflow:hidden;white-space:nowrap}
+.xl-menu span{padding-bottom:5px}
+.xl-menu span.on{border-bottom:3px solid #107c41;color:#107c41;font-weight:600}
+.xl-ribbon{display:flex;gap:6px;padding:8px 12px;background:#f8f8f8;border-bottom:1px solid #d6d6d6;overflow:hidden;white-space:nowrap}
+.xl-gruppo{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 10px;border-right:1px solid #e0e0e0;color:#555;font-size:11px}
+.xl-gruppo .ics{display:flex;gap:4px}
+.xl-gruppo .ics i{width:22px;height:22px;border-radius:3px;background:#e6e6e6;display:block}
+.xl-formula{display:flex;align-items:center;border-bottom:1px solid #d6d6d6;font-size:13px}
+.xl-formula .nb{width:80px;padding:4px 8px;border-right:1px solid #d6d6d6}
+.xl-formula .fx{padding:4px 10px;color:#777;font-style:italic;border-right:1px solid #d6d6d6}
+.xl-formula .fv{padding:4px 10px;flex:1;white-space:nowrap;overflow:hidden}
+.xl-foglio{flex:1;overflow:auto;background:#fff}
+.xl-foglio table{border-collapse:collapse;font-size:13px;white-space:nowrap}
+.xl-foglio th{background:#f3f3f3;color:#555;font-weight:400;border:1px solid #d9d9d9;padding:2px 6px;position:sticky;top:0;z-index:1}
+.xl-foglio th.rn{position:sticky;left:0;z-index:2;min-width:38px}
+.xl-foglio td{border:1px solid #e3e3e3;padding:2px 8px;height:21px;cursor:cell;min-width:64px}
+.xl-foglio td.int{font-weight:700;background:#ddebf7}
+.xl-foglio td.num{text-align:right}
+.xl-foglio td.rosso{color:#c00000}
+.xl-foglio td.sel{outline:2px solid #107c41;outline-offset:-2px}
+.xl-fogli{display:flex;gap:2px;background:#f3f3f3;border-top:1px solid #d6d6d6;padding:0 10px;font-size:12px}
+.xl-fogli span{padding:5px 14px;color:#555}
+.xl-fogli span.on{background:#fff;color:#107c41;font-weight:600;border-bottom:2px solid #107c41}
+.xl-stato{display:flex;justify-content:space-between;background:#f3f3f3;border-top:1px solid #d6d6d6;padding:3px 12px;font-size:12px;color:#555}
+</style>
+</head>
+<body>
+
+<!-- ============ LOBBY ============ -->
+<section class="lobby" id="lobby">
+  <div class="lobby-box">
+    <h1 class="logo">Forza 4<br>Armato<span class="dischi"><i></i><i></i></span></h1>
+    <p class="sotto">Turni in diretta, pedine che esplodono, tabelloni che girano.</p>
+
+    <div class="blocco">
+      <h2>Nuova partita</h2>
+      <div class="riga">
+        <div><label for="nomeCrea">Il tuo nome</label><input id="nomeCrea" maxlength="14" autocomplete="off"></div>
+        <div><label for="obiettivo">Vince chi arriva a</label>
+          <select id="obiettivo"><option value="5">5 Forza 4</option><option value="10">10 Forza 4</option></select></div>
+      </div>
+      <button class="btn" id="btnCrea">Crea partita</button>
+    </div>
+
+    <div class="blocco">
+      <h2>Entra in una partita</h2>
+      <div class="riga">
+        <div><label for="nomeEntra">Il tuo nome</label><input id="nomeEntra" maxlength="14" autocomplete="off"></div>
+        <div><label for="codiceEntra">Codice</label><input id="codiceEntra" class="codice" maxlength="4" autocomplete="off"></div>
+      </div>
+      <button class="btn secondario" id="btnEntra">Entra</button>
+    </div>
+
+    <p class="nota">Premi <kbd>Esc</kbd> in qualsiasi momento per passare al foglio Excel. Premilo di nuovo per tornare.</p>
+  </div>
+</section>
+
+<!-- ============ PARTITA ============ -->
+<section id="partita" class="nascosto">
+  <header class="bug">
+    <div class="bug-in">
+      <div class="lato A" id="latoA">
+        <span class="disco"></span>
+        <div><div class="nome" id="nomeA">—</div><div class="armi-opp" id="armiA"></div></div>
+        <span class="punti" id="puntiA">0</span>
+      </div>
+      <div class="centro"><span>primo a</span><b id="obiettivoTxt">5</b></div>
+      <div class="lato B" id="latoB">
+        <span class="disco"></span>
+        <div><div class="nome" id="nomeB">—</div><div class="armi-opp" id="armiB"></div></div>
+        <span class="punti" id="puntiB">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="campo">
+    <section class="gioco">
+      <div class="condividi nascosto" id="condividi">
+        <div style="color:var(--tenue);font-size:14px">Manda questo codice al collega</div>
+        <div class="cod" id="codTxt">----</div>
+        <button class="btn secondario" id="btnCopia" style="width:auto;padding:8px 14px;margin-top:6px">Copia il link</button>
+      </div>
+      <div class="stato" id="stato"></div>
+      <div class="anteprima" id="anteprima"></div>
+      <div class="tavola-wrap"><div class="tavola" id="tavola"></div></div>
+      <div class="coord-col"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+
+      <div class="arsenale" id="arsenale">
+        <div class="ars-testa"><h3>Le tue armi</h3><span style="font-size:13px;color:var(--tenue)">massimo 3 · usarne una costa il turno</span></div>
+        <div class="slot-armi" id="slotArmi"></div>
+        <button class="riscuoti" id="btnRiscuoti"><span class="rullo" id="rullo">🎰</span><span id="riscuotiTxt">Riscuoti arma</span></button>
+        <div class="mira nascosto" id="mira"></div>
+      </div>
+      <div class="finale nascosto" id="finale"><button class="btn" id="btnRivincita" style="width:auto;padding:12px 26px">Rivincita</button></div>
+    </section>
+
+    <aside class="cronaca">
+      <div class="cr-testa"><h3>Telecronaca</h3><span class="live"><i></i>in diretta</span></div>
+      <ol class="cr-lista" id="crLista"></ol>
+      <div class="cr-piede" id="crPiede">Partita —</div>
+    </aside>
+  </main>
+</section>
+
+<!-- ============ EXCEL FINTO (tasto Esc) ============ -->
+<div id="excel" class="nascosto" aria-hidden="true">
+  <div class="xl-titolo"><span>Salvataggio automatico ●</span><span class="nomefile">Monitoraggio_MiFID_scaduti.xlsx - Salvato</span><span>Ricerca</span></div>
+  <div class="xl-menu"><span>File</span><span class="on">Home</span><span>Inserisci</span><span>Layout di pagina</span><span>Formule</span><span>Dati</span><span>Revisione</span><span>Visualizza</span><span>Guida</span></div>
+  <div class="xl-ribbon">
+    <div class="xl-gruppo"><div class="ics"><i></i><i></i><i></i></div>Appunti</div>
+    <div class="xl-gruppo"><div class="ics"><i></i><i></i><i></i><i></i><i></i></div>Carattere</div>
+    <div class="xl-gruppo"><div class="ics"><i></i><i></i><i></i><i></i></div>Allineamento</div>
+    <div class="xl-gruppo"><div class="ics"><i></i><i></i><i></i></div>Numeri</div>
+    <div class="xl-gruppo"><div class="ics"><i></i><i></i><i></i></div>Stili</div>
+    <div class="xl-gruppo"><div class="ics"><i></i><i></i></div>Celle</div>
+    <div class="xl-gruppo"><div class="ics"><i></i><i></i><i></i></div>Modifica</div>
+  </div>
+  <div class="xl-formula"><span class="nb" id="xlNb">B2</span><span class="fx">fx</span><span class="fv" id="xlFv"></span></div>
+  <div class="xl-foglio"><table id="xlTab"></table></div>
+  <div class="xl-fogli"><span class="on">Scaduti</span><span>In scadenza 30gg</span><span>Riepilogo filiale</span><span>+</span></div>
+  <div class="xl-stato"><span>Pronto</span><span id="xlConteggio"></span></div>
+</div>
+
+<div class="toast nascosto" id="toast"></div>
+
+<script>
+/* =========================================================
+   CONFIGURAZIONE — l'unica cosa da toccare
+   ========================================================= */
+const SUPABASE_URL = 'https://fxnfaotahrlmmrundkib.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4bmZhb3RhaHJsbW1ydW5ka2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2ODY1NTYsImV4cCI6MjEwNjI2MjU1Nn0.ZV9VsV2PLNtvrwmKNzeFFkDnKlXH7oo6c_jB0h5D6CY';   // la stessa chiave usata in Delitto in Filiale
+
+/* ========================================================= */
+const N = 8, MAX_ARMI = 3;
+const ARMI = {
+  bomba:     { icona:'💣', nome:'Bomba',     mira:'Bomba pronta: tocca la pedina da far saltare.' },
+  mattone:   { icona:'🧱', nome:'Mattone',   mira:'Mattone pronto: tocca la colonna dove farlo cadere.' },
+  ribaltone: { icona:'🔄', nome:'Ribaltone', mira:'Ribaltone pronto: scegli il verso.' }
+};
+const $ = id => document.getElementById(id);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let codice = null, ruolo = null, ver = -1, S = null;
+let modo = null, occupato = false, ultimaAnimata = null, logVisti = new Set(), primoRender = true;
+let canale = null, timerPoll = null, puntiPrima = {A:0,B:0};
+
+/* ---------- utilità ---------- */
+const altro = p => p === 'A' ? 'B' : 'A';
+const nome  = (s,p) => (s.giocatori[p] && s.giocatori[p].nome) || '—';
+const lettera = c => String.fromCharCode(65 + c);
+const coord = (r,c) => lettera(c) + (N - r);
+const dentro = (r,c) => r >= 0 && r < N && c >= 0 && c < N;
+const clona = o => JSON.parse(JSON.stringify(o));
+function ls(k, v){ try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){ return null; } }
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.remove('nascosto'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.add('nascosto'),2800); }
+function esc(t){ return String(t).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+function nuovoStato(nomeA, obiettivo){
+  return {
+    griglia: Array.from({length:N}, () => Array(N).fill(null)),
+    giocatori: { A:{nome:nomeA}, B:null },
+    turno:'A', inizia:'A',
+    punti:{A:0,B:0}, obiettivo,
+    armi:{A:[],B:[]}, daRiscuotere:{A:0,B:0},
+    log:[], vincitore:null, mossa:0, ultima:null, partita:1
+  };
+}
+function addLog(s, tipo, testo, p){
+  s.log.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), ts: Date.now(), tipo, testo, p: p || null });
+  if(s.log.length > 40) s.log.splice(0, s.log.length - 40);
+}
+
+/* =========================================================
+   REGOLE
+   ========================================================= */
+function gravita(g){
+  for(let c=0;c<N;c++){
+    const col=[];
+    for(let r=N-1;r>=0;r--) if(g[r][c]) col.push(g[r][c]);
+    for(let r=N-1;r>=0;r--) g[r][c] = col[N-1-r] || null;
+  }
+}
+function trovaLinee(g){
+  const runs=[], dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const [dr,dc] of dirs){
+    for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+      const v=g[r][c];
+      if(v!=='A' && v!=='B') continue;
+      if(dentro(r-dr,c-dc) && g[r-dr][c-dc]===v) continue;  // non è l'inizio della fila
+      const celle=[]; let rr=r, cc=c;
+      while(dentro(rr,cc) && g[rr][cc]===v){ celle.push([rr,cc]); rr+=dr; cc+=dc; }
+      if(celle.length>=4) runs.push({p:v, celle});
+    }
+  }
+  return runs;
+}
+// Applica gravità, toglie i Forza 4, gestisce le cascate e il tabellone pieno
+function risolvi(s, autore){
+  const g=s.griglia, rimosse=[];
+  let passo=0;
+  for(let guardia=0; guardia<80; guardia++){
+    gravita(g);
+    const runs=trovaLinee(g);
+    if(runs.length){
+      passo++;
+      const per={A:0,B:0};
+      runs.forEach(run => { per[run.p]++; run.celle.forEach(x => rimosse.push(x)); });
+      runs.forEach(run => run.celle.forEach(([r,c]) => g[r][c]=null));
+      ['A','B'].forEach(p => {
+        if(!per[p]) return;
+        s.punti[p]+=per[p]; s.daRiscuotere[p]+=per[p];
+        const quanti = per[p]===1 ? 'Forza 4' : per[p]===2 ? 'DOPPIO Forza 4' : per[p]+' Forza 4 in un colpo';
+        let t;
+        if(p!==autore) t=`Regalo! La mossa di ${nome(s,autore)} fa fare ${quanti} a ${nome(s,p)}`;
+        else if(passo>1) t=`Reazione a catena! ${quanti} di ${nome(s,p)}`;
+        else t=`${quanti} di ${nome(s,p)}!`;
+        addLog(s,'forza4',`${t} (${s.punti[p]}/${s.obiettivo})`,p);
+      });
+      continue;
+    }
+    if(g[0].every(x => x!==null)){
+      for(let c=0;c<N;c++) g[N-1][c]=null;
+      addLog(s,'sistema','Tabellone pieno: salta la riga in basso');
+      continue;
+    }
+    break;
+  }
+  return rimosse;
+}
+function controllaVittoria(s, autore){
+  const a=s.punti.A>=s.obiettivo, b=s.punti.B>=s.obiettivo;
+  if(!a && !b) return;
+  let w;
+  if(a && b) w = s.punti.A>s.punti.B ? 'A' : s.punti.B>s.punti.A ? 'B' : autore;
+  else w = a ? 'A' : 'B';
+  s.vincitore=w;
+  addLog(s,'vittoria',`🏆 ${nome(s,w)} vince ${s.punti[w]} a ${s.punti[altro(w)]}!`,w);
+}
+function pesca(){ const x=Math.random(); return x<.4 ? 'bomba' : x<.8 ? 'mattone' : 'ribaltone'; }
+function ruota(g, verso){
+  const n=Array.from({length:N}, () => Array(N).fill(null));
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++)
+    n[r][c] = verso==='orario' ? g[N-1-c][r] : g[c][N-1-r];
+  return n;
+}
+
+/* =========================================================
+   SALVATAGGIO (con controllo di versione)
+   ========================================================= */
+async function invia(costruttore){
+  if(occupato) return false;
+  occupato=true;
+  try{
+    for(let tentativo=0; tentativo<2; tentativo++){
+      const s=clona(S);
+      if(costruttore(s)===false) return false;
+      const { data, error } = await sb.from('forza4')
+        .update({ stato:s, versione:ver+1, aggiornato_il:new Date().toISOString() })
+        .eq('codice',codice).eq('versione',ver).select();
+      if(error){ toast('Errore di collegamento: '+error.message); return false; }
+      if(data && data.length){ applica(data[0]); return true; }
+      await carica();   // qualcuno ha mosso nel frattempo: ricarico e riprovo
+    }
+    toast('La partita è cambiata mentre giocavi: riprova');
+    return false;
+  } finally { occupato=false; if(S) render(); }
+}
+function azioneTurno(fn){
+  return invia(s => {
+    if(s.vincitore){ return false; }
+    if(!s.giocatori.B){ toast('Aspetta che entri l\'avversario'); return false; }
+    if(s.turno!==ruolo){ toast('Non è il tuo turno'); return false; }
+    if(fn(s)===false) return false;
+    s.mossa++;
+    s.ultima.v=s.mossa;
+    s.ultima.rimosse=risolvi(s,ruolo);
+    controllaVittoria(s,ruolo);
+    if(!s.vincitore) s.turno=altro(ruolo);
+    return true;
+  });
+}
+
+/* ---------- azioni ---------- */
+function gioca(c){
+  return azioneTurno(s => {
+    const g=s.griglia;
+    if(g[0][c]){ toast('Colonna piena'); return false; }
+    let r=N-1; while(g[r][c]) r--;
+    g[r][c]=ruolo;
+    s.ultima={tipo:'pedina', nuova:[r,c]};
+  });
+}
+function usaBomba(r,c){
+  return azioneTurno(s => {
+    const g=s.griglia, cosa=g[r][c];
+    const i=s.armi[ruolo].indexOf('bomba');
+    if(i<0 || !cosa) return false;
+    s.armi[ruolo].splice(i,1);
+    g[r][c]=null;
+    let extra = cosa===ruolo ? ' (era una sua pedina!)' : cosa==='M' ? ' e polverizza un mattone' : '';
+    addLog(s,'arma',`💣 ${nome(s,ruolo)} sgancia una bomba su ${coord(r,c)}${extra}`,ruolo);
+    s.ultima={tipo:'bomba', bomba:[r,c]};
+  });
+}
+function usaMattone(c){
+  return azioneTurno(s => {
+    const g=s.griglia;
+    const i=s.armi[ruolo].indexOf('mattone');
+    if(i<0) return false;
+    if(g[0][c]){ toast('Colonna piena'); return false; }
+    s.armi[ruolo].splice(i,1);
+    let r=N-1; while(g[r][c]) r--;
+    g[r][c]='M';
+    addLog(s,'arma',`🧱 ${nome(s,ruolo)} piazza un mattone in colonna ${lettera(c)}`,ruolo);
+    s.ultima={tipo:'mattone', nuova:[r,c]};
+  });
+}
+function usaRibaltone(verso){
+  return azioneTurno(s => {
+    const i=s.armi[ruolo].indexOf('ribaltone');
+    if(i<0) return false;
+    s.armi[ruolo].splice(i,1);
+    s.griglia=ruota(s.griglia,verso);
+    addLog(s,'arma',`🔄 RIBALTONE! ${nome(s,ruolo)} gira il tabellone in senso ${verso}`,ruolo);
+    s.ultima={tipo:'ribaltone', verso};
+  });
+}
+async function riscuoti(){
+  if(!S || !ruolo || occupato) return;
+  if(S.daRiscuotere[ruolo]<=0 || S.armi[ruolo].length>=MAX_ARMI) return;
+  const arma=pesca();
+  const btn=$('btnRiscuoti'); btn.disabled=true;
+  // effetto slot
+  const icone=['💣','🧱','🔄'];
+  for(let k=0;k<12;k++){ $('rullo').textContent=icone[k%3]; await new Promise(r=>setTimeout(r,60+k*12)); }
+  $('rullo').textContent=ARMI[arma].icona;
+  const ok = await invia(s => {
+    if(s.daRiscuotere[ruolo]<=0 || s.armi[ruolo].length>=MAX_ARMI) return false;
+    s.daRiscuotere[ruolo]--;
+    s.armi[ruolo].push(arma);
+    addLog(s,'riscossa',`${nome(s,ruolo)} riscuote un'arma (ne ha ${s.armi[ruolo].length})`,ruolo);
+  });
+  if(ok) toast(`Hai trovato: ${ARMI[arma].icona} ${ARMI[arma].nome}`);
+  setTimeout(()=>{ $('rullo').textContent='🎰'; render(); }, 900);
+}
+function rivincita(){
+  return invia(s => {
+    if(!s.vincitore) return false;
+    const n=nuovoStato(s.giocatori.A.nome, s.obiettivo);
+    n.giocatori=s.giocatori;
+    n.inizia=altro(s.vincitore);
+    n.turno=n.inizia;
+    n.partita=(s.partita||1)+1;
+    addLog(n,'sistema',`Partita ${n.partita}: si riparte, inizia ${nome(n,n.turno)}`);
+    Object.keys(s).forEach(k => delete s[k]);
+    Object.assign(s,n);
+  });
+}
+
+/* =========================================================
+   COLLEGAMENTO
+   ========================================================= */
+function applica(row, forza){
+  if(!forza && S && row.versione<=ver) return;
+  ver=row.versione; S=row.stato;
+  render();
+}
+async function carica(){
+  const { data, error } = await sb.from('forza4').select('*').eq('codice',codice).maybeSingle();
+  if(error){ toast('Errore di collegamento: '+error.message); return null; }
+  if(data) applica(data,true);
+  return data;
+}
+function ascolta(){
+  if(canale) sb.removeChannel(canale);
+  canale = sb.channel('f4-'+codice)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'forza4',filter:'codice=eq.'+codice}, p => applica(p.new))
+    .subscribe();
+  // rete di sicurezza: controllo ogni 4 secondi nel caso il realtime perda un colpo
+  clearInterval(timerPoll);
+  timerPoll=setInterval(async () => {
+    if(occupato) return;
+    const { data } = await sb.from('forza4').select('versione').eq('codice',codice).maybeSingle();
+    if(data && data.versione>ver) carica();
+  }, 4000);
+}
+function generaCodice(){
+  const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c='';
+  for(let i=0;i<4;i++) c+=a[Math.floor(Math.random()*a.length)];
+  return c;
+}
+async function crea(){
+  const n=$('nomeCrea').value.trim();
+  if(!n){ toast('Scrivi il tuo nome'); return; }
+  ls('f4:nome',n);
+  const obiettivo=parseInt($('obiettivo').value,10);
+  $('btnCrea').disabled=true;
+  for(let t=0;t<5;t++){
+    const cod=generaCodice();
+    const s=nuovoStato(n,obiettivo);
+    addLog(s,'sistema',`${n} apre il tavolo. Si gioca al primo che arriva a ${obiettivo}`);
+    const { error } = await sb.from('forza4').insert({ codice:cod, stato:s, versione:0 });
+    if(!error){ ls('f4:'+cod,'A'); $('btnCrea').disabled=false; return entra(cod,'A'); }
+    if(error.code!=='23505'){ toast('Errore: '+error.message); break; }
+  }
+  $('btnCrea').disabled=false;
+}
+async function unisciti(){
+  const cod=$('codiceEntra').value.trim().toUpperCase();
+  const n=$('nomeEntra').value.trim();
+  if(cod.length!==4){ toast('Il codice è di 4 caratteri'); return; }
+  const salvato=ls('f4:'+cod);
+  if(salvato) return entra(cod,salvato);
+  if(!n){ toast('Scrivi il tuo nome'); return; }
+  ls('f4:nome',n);
+  codice=cod; ver=-1; S=null;
+  const row=await carica();
+  if(!row){ toast('Partita non trovata'); codice=null; return; }
+  if(S.giocatori.B){ toast('Partita già piena: la guardi da spettatore'); return entra(cod,null); }
+  ruolo='B';
+  const ok=await invia(s => {
+    if(s.giocatori.B) return false;
+    s.giocatori.B={nome:n};
+    addLog(s,'sistema',`${n} si siede al tavolo. Comincia ${nome(s,s.turno)}`);
+  });
+  if(ok){ ls('f4:'+cod,'B'); entra(cod,'B'); }
+  else { toast('Qualcuno è entrato prima di te: guardi da spettatore'); entra(cod,null); }
+}
+async function entra(cod, r){
+  codice=cod; ruolo=r; modo=null; primoRender=true;
+  $('lobby').classList.add('nascosto'); $('partita').classList.remove('nascosto');
+  try{ history.replaceState(null,'','?s='+cod); }catch(e){}
+  await carica();
+  ascolta();
+}
+
+/* =========================================================
+   DISEGNO
+   ========================================================= */
+function render(){
+  if(!S) return;
+  const mio = ruolo && S.turno===ruolo && S.giocatori.B && !S.vincitore;
+  if(!mio && modo) modo=null;
+
+  // tabellone punteggi
+  ['A','B'].forEach(p => {
+    $('nome'+p).textContent = S.giocatori[p] ? S.giocatori[p].nome : 'in attesa…';
+    const el=$('punti'+p);
+    if(!primoRender && S.punti[p]>puntiPrima[p]){ el.classList.remove('su'); void el.offsetWidth; el.classList.add('su'); }
+    el.textContent=S.punti[p];
+    $('lato'+p).classList.toggle('attivo', !S.vincitore && !!S.giocatori.B && S.turno===p);
+    const na=S.armi[p].length, nr=S.daRiscuotere[p];
+    $('armi'+p).textContent = (p===ruolo) ? '' : (na? `${na} ${na===1?'arma':'armi'} in tasca` : 'nessuna arma') + (nr? ` · ${nr} da riscuotere`:'');
+  });
+  puntiPrima={...S.punti};
+  $('obiettivoTxt').textContent=S.obiettivo;
+
+  // condivisione codice
+  $('condividi').classList.toggle('nascosto', !!S.giocatori.B);
+  $('codTxt').textContent=codice;
+
+  // riga di stato
+  let st;
+  if(S.vincitore) st = S.vincitore===ruolo ? '<b>Hai vinto.</b>' : `<b>${esc(nome(S,S.vincitore))}</b> ha vinto.`;
+  else if(!S.giocatori.B) st='In attesa del secondo giocatore';
+  else if(!ruolo) st=`Stai guardando. Tocca a <b>${esc(nome(S,S.turno))}</b>`;
+  else if(mio) st='<b>Tocca a te</b>';
+  else st=`Tocca a <b>${esc(nome(S,S.turno))}</b>`;
+  $('stato').innerHTML=st;
+
+  renderTavola(mio);
+  renderArsenale(mio);
+  renderCronaca();
+  $('finale').classList.toggle('nascosto', !(S.vincitore && ruolo));
+  $('crPiede').textContent=`Partita ${S.partita||1} · mossa ${S.mossa} · codice ${codice}`;
+  primoRender=false;
+}
+
+function renderTavola(mio){
+  const t=$('tavola'), g=S.griglia, u=S.ultima;
+  const anima = u && u.v && u.v!==ultimaAnimata && !primoRender;
+  t.className='tavola' + (mio && modo!=='ribaltone' ? ' giocabile':'') + (modo==='bomba' ? ' mira-bomba':'');
+  t.innerHTML='';
+  for(let r=0;r<N;r++) for(let c=0;c<N;c++){
+    const b=document.createElement('button');
+    b.className='cella'+(g[r][c]?' piena':'');
+    b.setAttribute('aria-label', coord(r,c)+(g[r][c]? ' '+(g[r][c]==='M'?'mattone':nome(S,g[r][c])) : ' vuota'));
+    if(g[r][c]){
+      const p=document.createElement('span');
+      p.className='ped '+g[r][c];
+      if(anima && u.nuova && u.nuova[0]===r && u.nuova[1]===c){ p.classList.add('cade'); p.style.setProperty('--h', r+1); }
+      b.appendChild(p);
+    }
+    if(anima && u.rimosse && u.rimosse.some(x=>x[0]===r&&x[1]===c)){
+      const f=document.createElement('span'); f.className='fantasma'; b.appendChild(f);
+    }
+    if(anima && u.bomba && u.bomba[0]===r && u.bomba[1]===c){
+      const f=document.createElement('span'); f.className='scoppio'; b.appendChild(f);
+    }
+    b.addEventListener('click',()=>clickCella(r,c));
+    b.addEventListener('mouseenter',()=>anteprima(c));
+    t.appendChild(b);
+  }
+  t.onmouseleave=()=>anteprima(-1);
+  if(anima && u.tipo==='ribaltone'){ void t.offsetWidth; t.classList.add(u.verso==='orario'?'ruota-o':'ruota-a'); }
+  if(u && u.v) ultimaAnimata=u.v;
+  // preview colonna
+  const a=$('anteprima'); a.innerHTML='';
+  for(let c=0;c<N;c++){ const s=document.createElement('span'); s.dataset.c=c; a.appendChild(s); }
+}
+function anteprima(c){
+  const mio = ruolo && S && S.turno===ruolo && S.giocatori.B && !S.vincitore;
+  document.querySelectorAll('#anteprima span').forEach(s => {
+    const on = mio && +s.dataset.c===c && (modo===null || modo==='mattone') && !S.griglia[0][c];
+    s.className = on ? 'on '+(modo==='mattone'?'M':ruolo) : '';
+  });
+}
+function clickCella(r,c){
+  if(!S || !ruolo) return;
+  if(modo==='bomba'){ if(S.griglia[r][c]){ modo=null; usaBomba(r,c); } else toast('Scegli una casella con una pedina'); return; }
+  if(modo==='mattone'){ modo=null; usaMattone(c); return; }
+  if(modo==='ribaltone') return;
+  gioca(c);
+}
+
+function renderArsenale(mio){
+  const box=$('arsenale');
+  box.classList.toggle('nascosto', !ruolo);
+  if(!ruolo) return;
+  const slot=$('slotArmi'); slot.innerHTML='';
+  const mie=S.armi[ruolo];
+  for(let i=0;i<MAX_ARMI;i++){
+    const tipo=mie[i];
+    const b=document.createElement('button');
+    if(!tipo){ b.className='arma vuota'; b.disabled=true; b.textContent='slot vuoto'; }
+    else{
+      b.className='arma'+(modo===tipo && mie.indexOf(tipo)===i ? ' armata':'');
+      b.innerHTML=`<span class="ic">${ARMI[tipo].icona}</span><span class="nm">${ARMI[tipo].nome}</span>`;
+      b.disabled=!mio;
+      b.title = mio ? 'Usa '+ARMI[tipo].nome : 'Puoi usarla solo nel tuo turno';
+      b.addEventListener('click',()=>{ modo = modo===tipo ? null : tipo; render(); });
+    }
+    slot.appendChild(b);
+  }
+  const nr=S.daRiscuotere[ruolo], pieno=mie.length>=MAX_ARMI;
+  const br=$('btnRiscuoti');
+  br.disabled = occupato || nr<=0 || pieno;
+  $('riscuotiTxt').textContent = nr<=0 ? 'Fai un Forza 4 per riscuotere un\'arma'
+    : pieno ? `Tasca piena (${nr} da riscuotere)` : `Riscuoti arma${nr>1?' ('+nr+')':''}`;
+
+  const m=$('mira');
+  if(!modo){ m.classList.add('nascosto'); m.innerHTML=''; return; }
+  m.classList.remove('nascosto');
+  m.innerHTML = `<span>${ARMI[modo].icona} ${ARMI[modo].mira}</span>` +
+    (modo==='ribaltone' ? '<button class="forte" data-v="antiorario">↺ Antiorario</button><button class="forte" data-v="orario">↻ Orario</button>' : '') +
+    '<button data-x="1">Annulla</button>';
+  m.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if(b.dataset.x){ modo=null; render(); return; }
+    modo=null; usaRibaltone(b.dataset.v);
+  }));
+}
+
+function renderCronaca(){
+  const ul=$('crLista');
+  const voci=[...S.log].reverse();
+  if(!voci.length){ ul.innerHTML='<li class="cr-vuota">Ancora niente da raccontare.</li>'; return; }
+  ul.innerHTML='';
+  voci.forEach(v => {
+    const li=document.createElement('li');
+    li.className=`t-${v.tipo}`+(v.p?` p-${v.p}`:'')+(!primoRender && !logVisti.has(v.id) ? ' nuova':'');
+    const d=new Date(v.ts);
+    li.innerHTML=`<span class="ora">${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</span><span class="tx">${esc(v.testo)}</span>`;
+    ul.appendChild(li);
+  });
+  voci.forEach(v => logVisti.add(v.id));
+}
+
+/* =========================================================
+   EXCEL FINTO
+   ========================================================= */
+function costruisciExcel(){
+  let seme=7;
+  const rnd=()=>{ seme|=0; seme=seme+0x6D2B79F5|0; let t=Math.imul(seme^seme>>>15,1|seme); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+  const cognomi=['Rossi','Bianchi','Galli','Ferrara','Conti','Marchetti','Fontana','Moretti','Barbieri','Lombardi','Testa','Mariani','Rinaldi','Caruso','Ferri','Fabbri','Pellegrini','Gentile','Leone','Martini','Sala','Villa','Cattaneo','Bassi','Longo','Monti','Grasso','Valentini','Riva','Donati','Colombo','Brambilla'];
+  const nomi=['Giuseppe','Anna','Franco','Maria Luisa','Roberto','Paola','Sergio','Giovanna','Luigi','Carla','Massimo','Elena','Bruno','Rita','Claudio','Silvana','Mauro','Daniela','Renato','Lucia','Alberto','Franca','Enrico','Graziella','Walter','Patrizia','Gianni','Ornella','Fabio','Marisa','Pietro','Luisa'];
+  const profili=['Prudente','Moderato','Bilanciato','Dinamico'];
+  const note=['Da ricontattare','Appuntamento fissato','Non risponde','Inviata mail','Lasciato messaggio','In attesa firma','Richiamare dopo le 15'];
+  const oggi=new Date(), giorno=864e5;
+  const fd=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const righe=cognomi.map((cg,i)=>{
+    const gg=Math.floor(4+rnd()*175);
+    const scad=new Date(oggi-gg*giorno);
+    const quest=new Date(scad); quest.setFullYear(scad.getFullYear()-3);
+    const contatto=new Date(oggi-Math.floor(rnd()*40)*giorno);
+    return { ndg:String(10000000+Math.floor(rnd()*89999999)), cliente:`${cg.toUpperCase()} ${nomi[i]}`,
+      profilo:profili[Math.floor(rnd()*4)], quest:fd(quest), scad:fd(scad), gg,
+      ctv:(Math.round((8000+rnd()*440000)/50)*50).toLocaleString('it-IT',{minimumFractionDigits:2}),
+      contatto:fd(contatto), nota:note[Math.floor(rnd()*note.length)] };
+  }).sort((a,b)=>b.gg-a.gg);
+  const intest=['NDG','Cliente','Profilo MiFID','Data questionario','Scadenza','Gg scaduto','Controvalore €','Ultimo contatto','Esito'];
+  const col='ABCDEFGHIJKLMNOP'; const vuote='<td></td>'.repeat(7);
+  let h='<tr><th class="rn"></th>'+intest.map((_,i)=>`<th>${col[i]}</th>`).join('')+'<th>J</th><th>K</th><th>L</th><th>M</th><th>N</th><th>O</th><th>P</th></tr>';
+  h+='<tr><th class="rn">1</th>'+intest.map(x=>`<td class="int">${x}</td>`).join('')+vuote+'</tr>';
+  righe.forEach((r,i)=>{
+    h+=`<tr><th class="rn">${i+2}</th><td>${r.ndg}</td><td>${r.cliente}</td><td>${r.profilo}</td><td class="num">${r.quest}</td><td class="num">${r.scad}</td><td class="num${r.gg>90?' rosso':''}">${r.gg}</td><td class="num">${r.ctv}</td><td class="num">${r.contatto}</td><td>${r.nota}</td>${vuote}</tr>`;
+  });
+  for(let i=righe.length+2;i<righe.length+14;i++) h+=`<tr><th class="rn">${i}</th>`+'<td></td>'.repeat(16)+'</tr>';
+  $('xlTab').innerHTML=h;
+  $('xlConteggio').textContent=`Clienti scaduti: ${righe.length}`;
+  $('xlTab').addEventListener('click',e=>{
+    const td=e.target.closest('td'); if(!td) return;
+    document.querySelectorAll('#xlTab td.sel').forEach(x=>x.classList.remove('sel'));
+    td.classList.add('sel');
+    const tr=td.parentElement; const ri=[...tr.parentElement.children].indexOf(tr);
+    const ci=[...tr.children].indexOf(td)-1;
+    $('xlNb').textContent=col[ci]+ri;
+    $('xlFv').textContent=td.textContent;
+  });
+  const primo=$('xlTab').querySelectorAll('tr')[2]?.children[2];
+  if(primo){ primo.classList.add('sel'); $('xlNb').textContent='B2'; $('xlFv').textContent=primo.textContent; }
+}
+function toggleExcel(){
+  const x=$('excel'); x.classList.toggle('nascosto');
+  if(!x.classList.contains('nascosto') && document.activeElement) document.activeElement.blur();
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ e.preventDefault(); toggleExcel(); } });
+
+/* =========================================================
+   AVVIO
+   ========================================================= */
+costruisciExcel();
+$('btnCrea').addEventListener('click',crea);
+$('btnEntra').addEventListener('click',unisciti);
+$('btnRiscuoti').addEventListener('click',riscuoti);
+$('btnRivincita').addEventListener('click',rivincita);
+$('btnCopia').addEventListener('click',async()=>{
+  const link=location.origin+location.pathname+'?s='+codice;
+  try{ await navigator.clipboard.writeText(link); toast('Link copiato'); }catch(e){ toast(link); }
+});
+$('codiceEntra').addEventListener('keydown',e=>{ if(e.key==='Enter') unisciti(); });
+const nomeSalvato=ls('f4:nome'); if(nomeSalvato){ $('nomeCrea').value=nomeSalvato; $('nomeEntra').value=nomeSalvato; }
+const param=new URLSearchParams(location.search).get('s');
+if(param){
+  const cod=param.toUpperCase();
+  $('codiceEntra').value=cod;
+  const r=ls('f4:'+cod);
+  if(r) entra(cod,r);
+}
+if(SUPABASE_KEY==='INCOLLA_QUI_LA_CHIAVE') toast('Manca la chiave Supabase nel file');
+</script>
+</body>
+</html>
